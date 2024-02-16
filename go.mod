@@ -5,6 +5,7 @@ go 1.21.5
 require (
 	github.com/crc-org/crc/v2 v2.32.0
 	github.com/klauspost/compress v1.17.6
+
 )
 
 require (
