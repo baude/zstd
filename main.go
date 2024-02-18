@@ -10,21 +10,22 @@ import (
 
 	crcOs "github.com/crc-org/crc/v2/pkg/os"
 	"github.com/klauspost/compress/zstd"
+	"github.com/svenwiltink/sparsecat"
 )
 
 func main() {
 
 	fmt.Println("hello")
 	fmt.Println("doing zstd")
-	if err := doZstd(); err != nil {
+	if err := doZstdSparseCat(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
-	fmt.Println("doing gz")
-	if err := doGz(); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
+	//fmt.Println("doing gz")
+	//if err := doGz(); err != nil {
+	//	fmt.Println(err)
+	//	os.Exit(1)
+	//}
 	fmt.Println("done")
 	os.Exit(0)
 
@@ -94,5 +95,29 @@ func doZstd() error {
 	if err != nil {
 		return err
 	}
+	return sparseCheck(dstFile.Fd())
+}
+
+func doZstdSparseCat() error {
+	now := time.Now()
+	uncompressedPath := fmt.Sprintf("output-zstd-%v-%v-%v-%v.raw", now.Day(), now.Hour(), now.Minute(), now.Second())
+	f, err := os.Open("fedora-coreos-39.20240210.2.0-applehv.aarch64.raw.zst")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	sparseEnc := sparsecat.NewEncoder(f)
+	dstFile, err := os.OpenFile(uncompressedPath, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0755)
+	if err != nil {
+		return err
+	}
+
+	spCat := sparsecat.NewDecoder(sparseEnc)
+	_, err = spCat.WriteTo(dstFile)
+	if err != nil {
+		return err
+	}
+
 	return sparseCheck(dstFile.Fd())
 }
